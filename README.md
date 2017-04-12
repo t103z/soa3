@@ -1,6 +1,6 @@
-# playground
+# Used Car Pricing Evaluation
 
-> A Vue.js project
+> A project for Tsinghua SOA course
 
 ## Build Setup
 
