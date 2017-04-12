@@ -49,6 +49,9 @@
           ctx.drawImage(this.$refs.video, 0, 0, canvas.width, canvas.height)
 
           return canvas
+        },
+        checkSupported () {
+          return this.supported
         }
 
       },

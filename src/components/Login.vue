@@ -5,7 +5,8 @@
             <cam v-if="!retake" ref="webcam"></cam>
             <img v-if="retake" :src="photo" alt=""/>
             <br>
-            <b-button id="take_button" variant="primary" @click="take_photo">{{take_or_retake}}</b-button>
+            <b-button v-if="supported" id="take_button" variant="primary" @click="take_photo">{{take_or_retake}}
+            </b-button>
             <b-button v-if="retake" id="login_button" variant="success" @click="do_login">Login</b-button>
         </div>
 
@@ -41,6 +42,7 @@
       do_login () {
         this.step += 1
         this.wait_info = 'Please wait'
+        var self = this
 
         const blob = b64ToBlob(this.photo)
         axios.post('https://westus.api.cognitive.microsoft.com/face/v1.0/detect', blob,
@@ -50,26 +52,34 @@
               'Ocp-Apim-Subscription-Key': '5dfd7fe32c974d0191cba61db3024fb1'
             }
           }).then(response => {
-            if (response.status === 200) {
-              const {faceId} = response.data[0]
-              return axios.post('https://westus.api.cognitive.microsoft.com/face/v1.0/identify',
-                {
-                  faceIds: [faceId],
-                  personGroupId: 1,
-                  confidenceThreshold: 0.6
-                },
-                {
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Ocp-Apim-Subscription-Key': '5dfd7fe32c974d0191cba61db3024fb1'
-                  }
-                })
-            } else {
-              throw response.body
+          console.log(response)
+          if (response.status === 200) {
+            if (response.data.length === 0) {
+              throw {code: 'no_face'}
             }
+            const {faceId} = response.data[0]
+            return axios.post('https://westus.api.cognitive.microsoft.com/face/v1.0/identify',
+              {
+                faceIds: [faceId],
+                personGroupId: 1,
+                confidenceThreshold: 0.85
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Ocp-Apim-Subscription-Key': '5dfd7fe32c974d0191cba61db3024fb1'
+                }
+              })
+          } else {
+            throw response.body
+          }
         }).then(response => {
+          console.log(response)
           if (response.status === 200) {
             const candidates = response.data[0].candidates
+            if (candidates.length === 0) {
+              throw {code: 'no_candidate'}
+            }
             const personId = candidates[0].personId
             return axios.get('https://westus.api.cognitive.microsoft.com/face/v1.0/persongroups/1/persons/' + personId,
               {
@@ -84,6 +94,12 @@
             }
           }
         }).catch(error => {
+          if (error.code && error.code === 'no_face') {
+            self.wait_info = 'No face detected, please refresh to retry'
+          }
+          if (error.code && error.code === 'no_candidate') {
+            self.wait_info = 'User unrecognized, please retry or register'
+          }
           if (error.response) {
             const content = error.response.data.error
             if (content.code === 'PersonGroupNotTrained') {
@@ -107,8 +123,12 @@
             throw response.data
           }
         }).catch(error => {
+          self.wait_info('Something went wrong... Please retry')
           console.log(error)
         })
+      },
+      supported () {
+        return this.$refs.webcam && this.$refs.webcam.checkSupported()
       }
     },
     computed: {

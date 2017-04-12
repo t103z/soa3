@@ -20,7 +20,7 @@
             <cam v-if="!retake" ref="webcam"></cam>
             <img v-if="retake" :src="photo" alt=""/>
             <br>
-            <b-button id="take_button" variant="primary" @click="take_photo">{{take_or_retake}}</b-button>
+            <b-button v-if="supported" id="take_button" variant="primary" @click="take_photo">{{take_or_retake}}</b-button>
             <br>
             <br>
 
@@ -80,6 +80,9 @@
       },
       take_or_retake () {
         return this.retake ? 're-take' : 'take photo'
+      },
+      supported () {
+        return this.$refs.webcam && this.$refs.webcam.checkSupported()
       }
     },
     components: {
