@@ -39,6 +39,7 @@
       name: 'evaluate',
       data () {
         return {
+          error: false,
           querying: false,
           price: undefined,
           brand: null,
@@ -225,6 +226,7 @@
             return
           }
           this.querying = true
+          this.error = false
           this.$http.post('execute?api-version=2.0&format=swagger', {
             Inputs: {
               car: [
@@ -250,6 +252,7 @@
             }
           }).catch(error => {
             this.querying = false
+            this.error = true
             console.log(error)
           })
         }
@@ -269,6 +272,9 @@
           if (this.querying) {
             return 'Please Wait'
           } else {
+            if (this.error) {
+              return 'Server API limit reached, try again 15 seconds later'
+            }
             return this.price && 'Your car is worth $ ' + Number(this.price).toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,')
           }
         }

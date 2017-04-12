@@ -123,17 +123,17 @@
             throw response.data
           }
         }).catch(error => {
-          self.wait_info('Something went wrong... Please retry')
+          self.wait_info = 'Something went wrong... Please retry'
           console.log(error)
         })
-      },
-      supported () {
-        return this.$refs.webcam && this.$refs.webcam.checkSupported()
       }
     },
     computed: {
       take_or_retake () {
         return this.retake ? 'Retake' : 'Take Photo'
+      },
+      supported () {
+        return this.$refs.webcam && this.$refs.webcam.checkSupported()
       }
     }
   }
